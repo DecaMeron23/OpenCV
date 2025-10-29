@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/emilio/Documenti/universita/robotica/progetto/opencv/11-hough-circles/build",
+  "command": "/usr/bin/g++  -isystem /usr/include/opencv4 -g -o CMakeFiles/main.dir/main.cpp.o -c /home/emilio/Documenti/universita/robotica/progetto/opencv/11-hough-circles/main.cpp",
+  "file": "/home/emilio/Documenti/universita/robotica/progetto/opencv/11-hough-circles/main.cpp",
+  "output": "CMakeFiles/main.dir/main.cpp.o"
+}
+]

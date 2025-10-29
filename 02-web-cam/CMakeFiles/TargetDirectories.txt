@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/web_cam/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/web_cam/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/web_cam/CMakeFiles/rebuild_cache.dir

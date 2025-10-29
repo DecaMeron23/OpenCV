@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/13-bird-eye/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/13-bird-eye/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/13-bird-eye/build/CMakeFiles/rebuild_cache.dir

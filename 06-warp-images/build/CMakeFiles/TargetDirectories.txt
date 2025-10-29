@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/06-warp-images/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/06-warp-images/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/06-warp-images/build/CMakeFiles/rebuild_cache.dir

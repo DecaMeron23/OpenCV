@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/01-primo-programma/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/01-primo-programma/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/01-primo-programma/CMakeFiles/rebuild_cache.dir

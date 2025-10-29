@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/12-aumento-contrasto/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/12-aumento-contrasto/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/12-aumento-contrasto/build/CMakeFiles/rebuild_cache.dir

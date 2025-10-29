@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/03-riconoscimento-blob/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/03-riconoscimento-blob/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/03-riconoscimento-blob/build/CMakeFiles/rebuild_cache.dir

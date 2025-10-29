@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/15-calcolo-fov/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/15-calcolo-fov/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/15-calcolo-fov/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,3 @@
+/home/emilio/Documenti/universita/robotica/progetto/opencv/10-blob-colore/build/CMakeFiles/main.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/10-blob-colore/build/CMakeFiles/edit_cache.dir
+/home/emilio/Documenti/universita/robotica/progetto/opencv/10-blob-colore/build/CMakeFiles/rebuild_cache.dir
