@@ -79,5 +79,6 @@
     },
     "files.watcherExclude": {
         "**/target": true
-    }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

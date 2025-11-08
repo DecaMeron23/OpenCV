@@ -11,7 +11,7 @@ Mat scalaImmagine(Mat img, double fattore);
 
 int main()
 {
-
+   
     VideoCapture video(0);
 
     Mat frame;
@@ -22,8 +22,8 @@ int main()
         Mat scalata = scalaImmagine(frame, 2);
 
         // Filtraggio immagine per colore
-        cv::Scalar lower(35, 40, 40);
-        cv::Scalar upper(85, 255, 255);
+        Scalar lower(35, 40, 40);
+        Scalar upper(85, 255, 255);
 
         Mat filtrata = filtroColore(frame, lower, upper);
         Mat filtrata_scalata = filtroColore(scalata, lower, upper);
@@ -77,7 +77,7 @@ Mat filtroColore(Mat img, Scalar lower, Scalar upper)
 Mat evidenziaBlob(Mat img, vector<KeyPoint> blobs, Scalar colore)
 {
     Mat dst;
-    drawKeypoints(img, blobs, dst, colore, cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    drawKeypoints(img, blobs, dst, colore, DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     return dst;
 }
 
