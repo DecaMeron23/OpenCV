@@ -28,6 +28,8 @@ void create_trackbar()
 /**
  * Calcola la posizione (relativa alla base della telecamera) di un punto su una immagine.
  *
+ * @authors Raffaele Giacomo Giovanni Di Maio, Giulia Signori, Emilio Meroni
+ * 
  * @param lunghezza_focale      lunghezza focale della telecamera in pixel.
  * @param dimensione_immagine   dimensioni dell'immagine in pixel (altezza e larghezza).
  * @param punto_immagine        posizione del punto (in pixel) nell'immagine da calcolare la distanza.
@@ -58,11 +60,16 @@ cv::Point2f calcola_distanza(float lunghezza_focale, cv::Size dimensione_immagin
 
     return cv::Point2f(world_x, world_y);
 }
+
 /**
  * Stima della lunghezza focale in pixel.
  *
+ * @authors Raffaele Giacomo Giovanni Di Maio, Giulia Signori, Emilio Meroni
+ * 
  * @param larghezza_immagine larghezza dell'immagine in pixel
- * @param fov_orizzontale fov orizzontale in gradi
+ * @param Df fov diagonale in gradi.
+ * @param Ha aspect ratio orizzontale (es: il 16 dei 16:9).
+ * @param Va aspect ratio verticale (es: il 9 dei 16:9).
  *
  * @return lunghezza focale in pixel
  *
@@ -70,16 +77,20 @@ cv::Point2f calcola_distanza(float lunghezza_focale, cv::Size dimensione_immagin
  * - Converting Diagonal Field of View (FOV) to Horizontal FOV: https://www.litchiutilities.com/docs/fov.php
  *
  */
-float lunghezza_focale(int larghezza_immagine, float fov_orizzontale)
+float lunghezza_focale(int larghezza_immagine, float Df, float Ha, float Va)
 {
-    // Conversione in radianti
-    float fov_orizzontale_rad = deg2rad(fov_orizzontale);
-    return (larghezza_immagine / 2.0) / tan(fov_orizzontale_rad / 2.0);
+    // Calcolo del fov orizzontale e conversione in radianti 
+    float Hf_rad = deg2rad(fov_orizzontale(Df , Ha , Va));
+    return (larghezza_immagine / 2.0) / tan(Hf_rad / 2.0);
 }
+
 
 /**
  * Funzione che scrive del testo sull'immagine in un punto specifico
  *
+ * @authors Raffaele Giacomo Giovanni Di Maio, Giulia Signori, Emilio Meroni
+ * 
+ * 
  * @param immagine immagine su cui scrivere.
  * @param punto posizione dove scrivere.
  * @param stringa testo da scrivere.
@@ -131,6 +142,8 @@ float fov_orizzontale(float Df, float Ha, float Va)
 /**
  * conversione da radianti a gradi.
  *
+ * @authors Raffaele Giacomo Giovanni Di Maio, Giulia Signori, Emilio Meroni
+ * 
  * @param rad valore in radianti
  *
  * @return angolo in gradi
@@ -144,7 +157,10 @@ float rad2deg(float rad)
 }
 /**
  * conversione da gradi a radianti.
- *deg2rad(Df)
+ * 
+ * @authors Raffaele Giacomo Giovanni Di Maio, Giulia Signori, Emilio Meroni
+ *
+ *
  * @param deg valore in gradi
  *
  * @return angolo in radianti
@@ -162,20 +178,34 @@ int main()
 {
     cv::VideoCapture video_capture(0);
     cv::Mat frame;
-    cv::namedWindow(nome_window_immagine);
-    create_trackbar();
-    char testo[100];
+    video_capture >> frame;
 
-    while (true)
-    {
-        video_capture >> frame;
-        cv::Point2i center_image = get_center_image(frame);
-        cv::Point2f distanza = calcola_distanza_centro(((float)altezza_int) / 100, ((float)angolo_deg_int) / 100);
-        sprintf(testo, "distanza: %.2f m", distanza.x);
-        scrivi_testo(frame, center_image, testo);
-        cv::imshow(nome_window_immagine, frame);
-        cv::waitKey(10);
-    }
+    int larghezza_immagine = frame.size().width;
 
-    video_capture.release();
+    float Df = 68.5;
+    int Ha = 16, Va = 9;
+    
+    float lF = lunghezza_focale(larghezza_immagine, Df, Ha, Va);
+    
+    std::cout<<"Lunghezza focale: "<< lF <<std::endl;
+
+
+    // cv::VideoCapture video_capture(0);
+    // cv::Mat frame;
+    // cv::namedWindow(nome_window_immagine);
+    // create_trackbar();
+    // char testo[100];
+
+    // while (true)
+    // {
+    //     video_capture >> frame;
+    //     cv::Point2i center_image = get_center_image(frame);
+    //     cv::Point2f distanza = calcola_distanza_centro(((float)altezza_int) / 100, ((float)angolo_deg_int) / 100);
+    //     sprintf(testo, "distanza: %.2f m", distanza.x);
+    //     scrivi_testo(frame, center_image, testo);
+    //     cv::imshow(nome_window_immagine, frame);
+    //     cv::waitKey(10);
+    // }
+
+    // video_capture.release();
 }
