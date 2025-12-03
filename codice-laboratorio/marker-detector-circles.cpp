@@ -411,66 +411,65 @@ class MarkerDetectorCirclesMono : public MarkerDetector {
         return base2punto;
     }
 
-   SceneTransform calcola_distanza_new(cv::Size dimensione_immagine,
-                                const cv::KeyPoint& punto_immagine,
-                                const SceneTransform& base2camera)
+   SceneTransform calcola_distanza(cv::Size dimensione_immagine,
+                                cv::KeyPoint punto_immagine,
+                                SceneTransform base2camera)
 {
-    // 1) Ray in camera coordinates (pinhole)
+    // 1) Ray in camera coordinates (pinhole model)
     double cx = dimensione_immagine.width  / 2.0;
     double cy = dimensione_immagine.height / 2.0;
 
     double u = punto_immagine.pt.x;
     double v = punto_immagine.pt.y;
 
-    // Direzione del raggio nel frame camera
+    // Direzione del raggio nel frame camera (z in avanti)
     cv::Vec3d dir_cam( (u - cx) / focal_length,
                        (v - cy) / focal_length,
                        1.0 );
+    dir_cam = dir_cam / cv::norm(dir_cam);  // opzionale, ma pulito
 
-    // Normalizza (non strettamente necessario ma pulito)
-    dir_cam = dir_cam / cv::norm(dir_cam);
+    // 2) Trasformazione da camera a base
+    // base2camera: base -> camera, quindi facciamo l'inversa
+    SceneTransform camera2base = base2camera.inverse();
 
-    // 2) Porta origine e direzione nel frame base
-    // base2camera: T_base_camera
-    // R_base_camera = rotazione (3x3)
-    // t_base_camera = traslazione (3x1)
-    cv::Matx33d R_base_cam;
-    {
-        double roll, pitch, yaw;
-        base2camera.getRPY(roll, pitch, yaw);
-        // qui devi costruire la Matx33d da RPY oppure, se SceneTransform
-        // ti dà già la matrice di rotazione, usala direttamente
-        R_base_cam = base2camera.getRotationMatrix(); // pseudo-codice
-    }
+    // matrice di rotazione camera->base
+    double (*R)[3] = camera2base.rot;
 
-    cv::Vec3d t_base_cam(base2camera.tra[0],
-                         base2camera.tra[1],
-                         base2camera.tra[2]);
+    cv::Vec3d dir_base(
+        R[0][0] * dir_cam[0] + R[0][1] * dir_cam[1] + R[0][2] * dir_cam[2],
+        R[1][0] * dir_cam[0] + R[1][1] * dir_cam[1] + R[1][2] * dir_cam[2],
+        R[2][0] * dir_cam[0] + R[2][1] * dir_cam[1] + R[2][2] * dir_cam[2]
+    );
 
-    cv::Vec3d dir_base = R_base_cam * dir_cam;   // direzione del raggio in base
-    cv::Vec3d orig_base = t_base_cam;            // origine del raggio (posizione della camera in base)
+    // origine del raggio in base = posizione della camera nel frame base
+    cv::Vec3d orig_base(
+        camera2base.tra[0],
+        camera2base.tra[1],
+        camera2base.tra[2]
+    );
 
     // 3) Intersezione con il piano z = 0 (pavimento nel frame base)
-    //   r(t) = orig_base + t * dir_base
-    //   vogliamo: r_z(t) = 0 -> orig_z + t * dir_z = 0
+    // r(t) = orig_base + t * dir_base
+    // vogliamo z(t) = 0 => oz + t * dz = 0
     double dz = dir_base[2];
     double oz = orig_base[2];
 
+    SceneTransform base2punto;
+    base2punto.setIdentity();
+
     if (std::abs(dz) < 1e-6) {
-        // raggio quasi parallelo al pavimento -> niente intersezione utile
-        SceneTransform base2punto;
-        base2punto.setTranslation(0, 0, 0); // o come preferisci gestire l'errore
+        // raggio quasi parallelo al pavimento: non interseca bene → restituisci qualcosa di neutro
+        base2punto.setTranslation(0.0, 0.0, 0.0);
         return base2punto;
     }
 
     double t = -oz / dz;
     cv::Vec3d p_base = orig_base + t * dir_base;
 
-    // 4) Riempie un SceneTransform che rappresenta la posa del punto nel frame base
-    SceneTransform base2punto;
+    // 4) Riempie il SceneTransform base->punto
     base2punto.setTranslation(p_base[0], p_base[1], p_base[2]);
-    // Rotazione identità (stai solo stimando la posizione)
-    base2punto.setRPY(0,0,0);
+    // orientazione identità: ti interessa solo la posizione
+    base2punto.setRPY(0.0, 0.0, 0.0);
 
     return base2punto;
 }
