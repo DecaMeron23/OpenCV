@@ -134,20 +134,13 @@ public:
 
         try {
             getSceneTransform("rgb_tilt_link", "rgb_camera_link", tilt2camera, time_stamp);
-            getSceneTransform("rgb_pan_link",  "rgb_tilt_link",   pan2tilt,    time_stamp);
-            getSceneTransform(robot_frame_id,  camera_frame_id,   robot2camera, time_stamp);
-
+            getSceneTransform("rgb_pan_link", "rgb_tilt_link", pan2tilt, time_stamp);
+            getSceneTransform(robot_frame_id, camera_frame_id, robot2camera, time_stamp);
             tilt2camera.getRPY(roll_tilt, pitch_tilt, yaw_tilt);
             pan2tilt.getRPY(roll_pan, pitch_pan, yaw_pan);
             robot2camera.getRPY(roll, pitch, yaw);
 
-            std::cout << "Robot2Camera T("
-                      << robot2camera.tra[0] << ", "
-                      << robot2camera.tra[1] << ", "
-                      << robot2camera.tra[2] << ")  R("
-                      << roll  << ", "
-                      << pitch << ", "
-                      << yaw   << ")" << std::endl;
+            std::cout << "Robot2Camera T(" << robot2camera.tra[0] << ", " << robot2camera.tra[1] << ", " << robot2camera.tra[2] << ")  R(" << roll << ", " << pitch << ", " << yaw << ")" << std::endl;
         } catch (const std::invalid_argument& e) {
             std::cout << "\n*** ERROR *** [MarkerDetectorCirclesMono]::detectMarkers()" << std::endl;
             std::cout << e.what() << std::endl;
@@ -179,15 +172,16 @@ public:
         //  - due versioni invertite per il detector di blob.
         // Queste quattro immagini permettono di analizzare sia forma che colore.
         // ----------------------------------------------------------------
+        // createTrackBar();
         cv::Mat hsv;
         cv::Mat immagine = frame.clone();
 
         cv::cvtColor(immagine, hsv, cv::COLOR_BGR2HSV);
 
-        cv::Mat img_final_red   = redFilter(hsv);
+        cv::Mat img_final_red = redFilter(hsv);
         cv::Mat img_final_green = greenFilter(hsv);
 
-        cv::Mat img_final_red_blob   = 255 - redFilter(hsv);
+        cv::Mat img_final_red_blob = 255 - redFilter(hsv);
         cv::Mat img_final_green_blob = 255 - greenFilter(hsv);
 
         // ----------------------------------------------------------------
@@ -196,10 +190,10 @@ public:
         //  - circleFinder(): individua regioni con elevata circularity.
         // Il risultato sono quattro insiemi di keypoint (rossi/verdi, blob/cerchi).
         // ----------------------------------------------------------------
-        std::vector<cv::KeyPoint> keypointsPos_blobRed   = blobFinder(img_final_red_blob);
+        std::vector<cv::KeyPoint> keypointsPos_blobRed = blobFinder(img_final_red_blob);
         std::vector<cv::KeyPoint> keypointsPos_blobGreen = blobFinder(img_final_green_blob);
 
-        std::vector<cv::KeyPoint> keypointsPos_circleRed   = circleFinder(img_final_red);
+        std::vector<cv::KeyPoint> keypointsPos_circleRed = circleFinder(img_final_red);
         std::vector<cv::KeyPoint> keypointsPos_circleGreen = circleFinder(img_final_green);
 
         cv::Scalar coloreCerchi(255, 0, 0);
@@ -229,22 +223,21 @@ public:
 
         // Unione di tutti i cerchi e blob, rossi e verdi
         std::vector<cv::KeyPoint> cerchi_blob(keypointsPos_circleRed);
-        cerchi_blob.insert(cerchi_blob.end(), keypointsPos_blobRed.begin(),   keypointsPos_blobRed.end());
+        cerchi_blob.insert(cerchi_blob.end(), keypointsPos_blobRed.begin(), keypointsPos_blobRed.end());
         cerchi_blob.insert(cerchi_blob.end(), keypointsPos_blobGreen.begin(), keypointsPos_blobGreen.end());
         cerchi_blob.insert(cerchi_blob.end(), keypointsPos_circleGreen.begin(), keypointsPos_circleGreen.end());
 
+        cv::KeyPoint punto_immagine;
+
         SceneTransform base2punto = calcola_distanza_geometrica_centro_immagine(immagine.size(), robot2camera);
 
-        std::sprintf(testo, "tilt: %.2f , pan: %.2f, h: %.2fm , x: %.2f",
-                     tilt, pan, h, base2punto.tra[0]);
+        sprintf(testo, "tilt: %.2f , pan: %.2f, h: %.2fm , x: %.2f", tilt, pan, h, base2punto.tra[0]);
 
-        cv::Point2f punto(50.0f, 50.0f);
-        cv::Point2f centro(immagine.size().width / 2.0f,
-                           immagine.size().height / 2.0f);
+        cv::Point2f punto(50.0, 50.0);
+        cv::Point2f punto2(immagine.size().width / 2, immagine.size().height / 2);
+        cv::circle(immagine, punto2, 5, cv::Scalar(255, 0, 0), -1);
 
-        cv::circle(immagine, centro, 5, cv::Scalar(255, 0, 0), -1);
-        cv::putText(immagine, testo, punto, cv::FONT_HERSHEY_PLAIN, 1.2,
-                    cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
+        cv::putText(immagine, testo, punto, cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
 
         // ----------------------------------------------------------------
         // Per ogni keypoint rilevato si calcola la sua posizione 3D stimata
@@ -255,33 +248,23 @@ public:
         // ----------------------------------------------------------------
         std::vector<InfoPoint> cerchi;
 
-        for (int i = 0; i < static_cast<int>(cerchi_blob.size()); ++i) {
-            SceneTransform posizione3 = stimaTotale(immagine.size(),
-                                                    cerchi_blob[i],
-                                                    robot2camera);
+        for (int i = 0; i < cerchi_blob.size(); i++) {
+            // marker_msg.id(1);
 
-            InfoPoint p{
-                i,
-                cv::Point2f(posizione3.tra[0], posizione3.tra[1]),
-                0.0f,
-                cerchi_blob.at(i).size,
-                cerchi_blob.at(i).pt
-            };
+            SceneTransform posizione3 = stimaTotale(immagine.size(), cerchi_blob[i], robot2camera);
+            InfoPoint p{i, cv::Point2f(posizione3.tra[0], posizione3.tra[1]), 0, cerchi_blob.at(i).size, cerchi_blob.at(i).pt};
 
             cerchi.push_back(p);
-
             std::cout << "Pos x: " << p.pos.x << std::endl;
-
             marker_msg.pose().pose().position().x(posizione3.tra[0]);
             marker_msg.pose().pose().position().y(posizione3.tra[1]);
-            marker_msg.pose().pose().position().z(0.0);  // marker sul pavimento
+            marker_msg.pose().pose().position().z(0.0);  // Hp: marker sul pavimento quindi traslazione rispetto a z nulla.
+
+            // marker_msg.pose().pose().orientation().setRPY(0,0,0);
 
             markers_msg.objects().push_back(marker_msg);
 
-            std::cout << "[MarkerDetection] Marker id:" << i
-                      << " Pose(" << posizione3.tra[0]
-                      << ", "      << posizione3.tra[1]
-                      << ", "      << 0.0 << ")" << std::endl;
+            std::cout << "[MarkerDetection] Marker id:" << i << " Pose(" << posizione3.tra[0] << ", " << posizione3.tra[1] << ", " << 0 << ")" << std::endl;
 
 #ifdef DEBUG
             /*
@@ -305,19 +288,13 @@ public:
         // ----------------------------------------------------------------
         determina_parametri(cerchi);
         std::cout << "Abbiamo determinato i parametri: qui quo qua quaquaraqua" << std::endl;
-
-        for (int i = 0; i < static_cast<int>(cerchi.size()); ++i) {
-            const auto& info = cerchi.at(i);
-
-            if (info.dim == GRANDE) {
-                cv::circle(immagine, info.posPix, info.dimPix,
-                           cv::Scalar(0, 0, 255), 0);
-            } else if (info.dim == PICCOLO) {
-                cv::circle(immagine, info.posPix, info.dimPix,
-                           cv::Scalar(0, 255, 0), 0);
+        for (int i = 0; i < cerchi.size(); i++) {
+            if (cerchi.at(i).dim == GRANDE) {
+                cv::circle(immagine, cerchi.at(i).posPix, cerchi.at(i).dimPix, cv::Scalar(0, 0, 255), 0);
+            } else if (cerchi.at(i).dim == PICCOLO) {
+                cv::circle(immagine, cerchi.at(i).posPix, cerchi.at(i).dimPix, cv::Scalar(0, 255, 0), 0);
             } else {
-                cv::circle(immagine, info.posPix, info.dimPix,
-                           cv::Scalar(255, 0, 0), 0);
+                cv::circle(immagine, cerchi.at(i).posPix, cerchi.at(i).dimPix, cv::Scalar(255, 0, 0), 0);
             }
         }
 
@@ -335,29 +312,32 @@ public:
 #endif
     }
 
-protected:
-    VProperty<double>      marker_size;      // [m]
-    VProperty<bool>        show_marker;
+   protected:
+    VProperty<double> marker_size;  // [m]
+    VProperty<bool> show_marker;
     VProperty<std::string> camera_frame_id;
     VProperty<std::string> robot_frame_id;
 
-private:
-    // Parametri camera. Da tenere?
-    float focal_length;          // E' la stessa del setup? Se no penso sia da togliere?
-    float altezza_camera_piana;  // Non usata, togliamo?
-    float braccio_tilt;          // Non usata, togliamo?
+   private:
+   // SONO DA TENERE? UNICO USATO FOCAL_LENGTH MA NON SO SE E' QUESTO CHE VIENE USATO?
+    // Lunghezza focale in pixel
+    float focal_length;
+    // Altezza della camera con angolo tilt = 0°
+    float altezza_camera_piana;
+    // Lunghezza del braccio della camera per tilt, con tilt = 0°
+    float braccio_tilt;
 
     // Parametri blob / filtri. Da tenere perché presi per riferimento dalla TrackBar? Resto usa SimpleBlobDetector params.
-    int   thrStep         = 5;
-    int   minThreshold    = 0;
-    int   maxThreshold    = 255;
-    int   minArea         = 10;
-    int   maxArea         = 100000;
-    int   minCircularity  = 75;
-    int   minConvexity    = 0;
-    int   minInertiaRatio = 0;
-    int   kernel_size     = 3;
-    float fattore         = 0.5f;
+    int thrStep = 5;
+    int minThreshold = 0;
+    int maxThreshold = 255;
+    int minArea = 10;
+    int maxArea = 100000;
+    int minCircularity = 75;
+    int minConvexity = 0;
+    int minInertiaRatio = 0;
+    int kernel_size = 3;
+    float fattore = 0.5;
 
     /**
      * Utility grafica che disegna dei cerchi intorno ai blob.
@@ -371,9 +351,7 @@ private:
      * @param colore  Colore da assegnare ai cerchi.
      */
 
-    void disegnaCerchi(cv::Mat& frame,
-                       std::vector<cv::KeyPoint> punti,
-                       cv::Scalar colore) {
+    void disegnaCerchi(cv::Mat& frame, std::vector<cv::KeyPoint> punti, cv::Scalar colore) {
         for (size_t i = 0; i < punti.size(); ++i) {
             auto blob = punti[i];
             cv::circle(frame, blob.pt, blob.size, colore, 5, cv::LINE_AA);
@@ -392,16 +370,11 @@ private:
      * @param stringa  Testo da scrivere.
      */
 
-    void scrivi_testo(cv::Mat& immagine,
-                      cv::Point2f& punto,
-                      char stringa[]) {
+    void scrivi_testo(cv::Mat& immagine, cv::Point2f& punto, char stringa[]) {
         cv::Scalar colore_centro(0, 255, 0);
         cv::Point2f tralsazione_testo(0, -25);
-
         cv::circle(immagine, punto, 2, colore_centro, 10, cv::LINE_AA);
-        cv::putText(immagine, stringa, punto + tralsazione_testo,
-                    cv::FONT_HERSHEY_SIMPLEX, 0.4,
-                    colore_centro, 1, cv::LINE_AA);
+        cv::putText(immagine, stringa, punto + tralsazione_testo, cv::FONT_HERSHEY_SIMPLEX, 0.4, colore_centro, 1, cv::LINE_AA);
     }
 
     /**
@@ -413,18 +386,17 @@ private:
     void createTrackBar() {
         std::string nameWin = "TrackBar";
         cv::namedWindow(nameWin);
-
-        // cv::createTrackbar("Thr step" , nameWin , &thrStep , 100);
-        // cv::createTrackbar("thr min" , nameWin , &minThreshold , 255);
-        // cv::createTrackbar("Thr max" , nameWin , &maxThreshold , 255);
-
-        cv::createTrackbar("area min",        nameWin, &minArea,        5000);
-        cv::createTrackbar("area max",        nameWin, &maxArea,        100000);
+        /*cv::createTrackbar("Thr step" , nameWin , &thrStep , 100);
+        cv::createTrackbar("thr min" , nameWin , &minThreshold , 255);
+        cv::createTrackbar("Thr max" , nameWin , &maxThreshold , 255);
+        */
+        cv::createTrackbar("area min", nameWin, &minArea, 5000);
+        cv::createTrackbar("area max", nameWin, &maxArea, 100000);
         cv::createTrackbar("circularity min", nameWin, &minCircularity, 100);
         // cv::createTrackbar("minConvexity" , nameWin , &minConvexity , 100);
         // cv::createTrackbar("filterByInertia" , nameWin , &minInertiaRatio , 100);
         // cv::createTrackbar("blobColor" , nameWin , &blobColor , 255);
-        cv::createTrackbar("Kernel",          nameWin, &kernel_size,    255);
+        cv::createTrackbar("Kernel", nameWin, &kernel_size, 255);
         // cv::createTrackbar("Contrasto" , nameWin , &fattore , 10);
     }
     
@@ -439,14 +411,16 @@ private:
      * @return Vettore di cv::KeyPoint che contiene tutti i punti assimilabili a blob.
      */
     std::vector<cv::KeyPoint> blobFinder(cv::Mat& image) {
+        // Set up parameters
         cv::SimpleBlobDetector::Params params;
-        params.thresholdStep       = thrStep;
-        params.filterByArea        = true;
-        params.minArea             = 10;
-        params.maxArea             = maxArea;
+        params.thresholdStep = thrStep;
+        params.filterByArea = true;
+        params.minArea = 10;
+        params.maxArea = maxArea;
         params.filterByCircularity = false;
-        params.minCircularity      = 0;
+        params.minCircularity = 0;
 
+        // Create detector and detect blobs
         cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
         std::vector<cv::KeyPoint> keypoints;
         detector->detect(image, keypoints);
@@ -465,14 +439,16 @@ private:
      * @return Vettore di cv::KeyPoint che contiene tutti i punti assimilabili a cerchi.
      */
     std::vector<cv::KeyPoint> circleFinder(cv::Mat& image) {
+        // Set up parameters
         cv::SimpleBlobDetector::Params params;
-        params.thresholdStep       = thrStep;
-        params.filterByArea        = true;
-        params.minArea             = minArea;
-        params.maxArea             = maxArea;
+        params.thresholdStep = thrStep;
+        params.filterByArea = true;
+        params.minArea = minArea;
+        params.maxArea = maxArea;
         params.filterByCircularity = true;
-        params.minCircularity      = .6f;
+        params.minCircularity = .6;
 
+        // Create detector and detect blobs
         cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
         std::vector<cv::KeyPoint> keypoints;
         detector->detect(image, keypoints);
@@ -492,18 +468,16 @@ private:
     cv::Mat greenFilter(cv::Mat imgHSV) {
         cv::Mat mask;
 
-        cv::Scalar lower_green(35,  50,  50);
+        cv::Scalar lower_green(35, 50, 50);
         cv::Scalar upper_green(85, 255, 255);
 
         cv::inRange(imgHSV, lower_green, upper_green, mask);
+
         cv::medianBlur(mask, mask, kernel_size * 2 + 1);
 
-        cv::Mat kernel = cv::getStructuringElement(
-            cv::MORPH_ELLIPSE,
-            cv::Size(kernel_size * 2 + 1, kernel_size * 2 + 1)
-        );
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(kernel_size * 2 + 1, kernel_size * 2 + 1));
 
-        cv::morphologyEx(mask, mask, cv::MORPH_OPEN,  kernel, cv::Point(-1, -1), 1);
+        cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel, cv::Point(-1, -1), 1);
         cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 1);
 
         return mask;
@@ -522,8 +496,8 @@ private:
     cv::Mat redFilter(cv::Mat imgHSV) {
         cv::Mat mask1, mask2, mask3, res;
 
-        cv::Scalar lower_red1(0,   100, 100);
-        cv::Scalar upper_red1(10,  255, 255);
+        cv::Scalar lower_red1(0, 100, 100);
+        cv::Scalar upper_red1(10, 255, 255);
         cv::Scalar lower_red2(160, 100, 100);
         cv::Scalar upper_red2(179, 255, 255);
 
@@ -535,12 +509,9 @@ private:
 
         cv::medianBlur(imgHSV, imgHSV, kernel_size * 2 + 1);
 
-        cv::Mat kernel = cv::getStructuringElement(
-            cv::MORPH_ELLIPSE,
-            cv::Size(kernel_size * 2 + 1, kernel_size * 2 + 1)
-        );
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(kernel_size * 2 + 1, kernel_size * 2 + 1));
 
-        cv::morphologyEx(imgHSV, imgHSV, cv::MORPH_OPEN,  kernel, cv::Point(-1, -1), 1);
+        cv::morphologyEx(imgHSV, imgHSV, cv::MORPH_OPEN, kernel, cv::Point(-1, -1), 1);
         cv::morphologyEx(imgHSV, imgHSV, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 1);
 
         return imgHSV;
@@ -558,22 +529,25 @@ private:
      * @return SceneTransform, rototraslazione dalla base del robot al punto del piano
      *         individuato dal centro dell'immagine.
      */
-    SceneTransform calcola_distanza_geometrica_centro_immagine(cv::Size dimensione_immagine,
-                                                               SceneTransform base2camera) {
+    SceneTransform calcola_distanza_geometrica_centro_immagine(cv::Size dimensione_immagine, SceneTransform base2camera) {
         double roll, pitch, yaw;
         base2camera.getRPY(roll, pitch, yaw);
 
+        // conversione dell'inclinazione della camera in radianti
         double tilt_rad = -roll;
-        double pan_rad  = -CV_PI / 2.0 - yaw;
+        double pan_rad = -CV_PI / 2 - yaw;
 
         double h = base2camera.tra[2];
-        double distanza_z = cv::abs(h / std::cos(tilt_rad));
+
+        double distanza_z = cv::abs(h / cos(tilt_rad));
 
         SceneTransform base2punto;
-        SceneTransform camera2punto;
+        // SceneTransform camera2base = base2camera.inverse();
+        SceneTransform camera2punto = SceneTransform();
         camera2punto.setTranslation(0, 0, distanza_z);
 
         base2punto = base2camera * camera2punto;
+
         return base2punto;
     }
 
@@ -590,9 +564,7 @@ private:
      *
      * @return SceneTransform, rototraslazione dalla base del robot al punto sul piano.
      */
-    SceneTransform calcola_distanza_geometrica(cv::Size dimensione_immagine,
-                                               cv::KeyPoint punto_immagine,
-                                               SceneTransform base2camera) {
+    SceneTransform calcola_distanza_geometrica(cv::Size dimensione_immagine, cv::KeyPoint punto_immagine, SceneTransform base2camera) {
         double roll, pitch, yaw;
         base2camera.getRPY(roll, pitch, yaw);
 
@@ -601,38 +573,36 @@ private:
         double alphay, betay, gammay;
         double Ay, By, Cy;
 
-        double tilt = roll + CV_PI / 2.0;       // 0° quando punta dritto e negativo verso il basso
-        double pan  = -CV_PI / 2.0 - yaw;
+        double tilt = roll + CV_PI / 2;  // 0° gradi quando punta dritto e negativo verso il basso
+        double pan = -CV_PI / 2 - yaw;
+        // Conversione delle cordinate immagine in coordinate camera
+        double pos_orizzontale = punto_immagine.pt.x - dimensione_immagine.width / 2.0;
+        double pos_verticale = punto_immagine.pt.y - dimensione_immagine.height / 2.0;
 
-        double pos_orizzontale = punto_immagine.pt.x - dimensione_immagine.width  / 2.0;
-        double pos_verticale   = punto_immagine.pt.y - dimensione_immagine.height / 2.0;
-
-        double theta_orizzontale = std::atan2(pos_orizzontale, focal_length);
-        double theta_verticale   = std::atan2(pos_verticale,   focal_length);
+        double theta_orizzontale = atan2(pos_orizzontale, focal_length);  // Angolo orizzontale [radianti]
+        double theta_verticale = atan2(pos_verticale, focal_length);      // Angolo verticale [radianti]
 
         SceneTransform base2punto, camera2centro;
 
-        // asse x
-        alphax = CV_PI / 2.0 + tilt;
-        betax  = CV_PI / 2.0 - alphax;
+        // calcolo degli angoli nel sistema di coordinate della camera lungo x
+        alphax = CV_PI / 2 + tilt;
+        betax = CV_PI / 2 - alphax;
         gammax = CV_PI - theta_verticale - betax;
 
-        Cx = base2camera.tra[2] / std::cos(alphax);
-        Ax = Cx * std::sin(theta_verticale) / std::sin(gammax);
+        Cx = base2camera.tra[2] / cos(alphax);
+        Ax = Cx * sin(theta_verticale) / sin(gammax);
 
-        // asse y
+        // calcolo degli angoli nel sistema di coordinate della camera lungo y
         alphay = theta_orizzontale;
-        betay  = CV_PI / 2.0;
+        betay = CV_PI / 2;
         gammay = CV_PI - alphay - betay;
 
         Cy = Cx;
-        Ay = Cy * std::sin(alphay) / std::sin(gammay);
+        Ay = Cy * sin(alphay) / sin(gammay);
 
         camera2centro.setTranslation(Ay, 0, Cx);
         base2punto = base2camera * camera2centro;
-        base2punto.setTranslation(base2punto.tra[0] - Ax,
-                                  base2punto.tra[1],
-                                  base2punto.tra[2]);
+        base2punto.setTranslation(base2punto.tra[0] - Ax, base2punto.tra[1], base2punto.tra[2]);
 
         return base2punto;
     }
@@ -650,12 +620,10 @@ private:
      *
      * @return float, lunghezza focale della camera espressa in pixel.
      */
-    float lunghezza_focale(int larghezza_immagine,
-                           float Df,
-                           float Ha,
-                           float Va) {
+    float lunghezza_focale(int larghezza_immagine, float Df, float Ha, float Va) {
+        // Calcolo del fov orizzontale e conversione in radianti
         float Hf_rad = deg2rad(fov_orizzontale(Df, Ha, Va));
-        return (larghezza_immagine / 2.0f) / std::tan(Hf_rad / 2.0f);
+        return (larghezza_immagine / 2.0) / tan(Hf_rad / 2.0);
     }
 
     /**
@@ -672,8 +640,8 @@ private:
     float fov_orizzontale(float Df, float Ha, float Va) {
         float Df_rad = deg2rad(Df);
 
-        float Da     = std::sqrt(Ha * Ha + Va * Va);
-        float Hf_rad = 2.0f * std::atan(std::tan(Df_rad / 2.0f) * (Ha / Da));
+        float Da = sqrt(Ha * Ha + Va * Va);
+        float Hf_rad = 2 * atan(tan(Df_rad / 2) * (Ha / Da));
         return rad2deg(Hf_rad);
     }
 
@@ -687,7 +655,7 @@ private:
      * @return float, angolo convertito in gradi.
      */
     float rad2deg(float rad) {
-        return rad * 180.0f / static_cast<float>(CV_PI);
+        return rad * 180.0 / CV_PI;
     }
 
     /**
@@ -700,7 +668,7 @@ private:
      * @return float, angolo convertito in radianti.
      */
     float deg2rad(float deg) {
-        return deg * static_cast<float>(CV_PI) / 180.0f;
+        return deg * CV_PI / 180.0;
     }
 
     /**
@@ -720,35 +688,35 @@ private:
         double roll, pitch, yaw;
         base2camera.getRPY(roll, pitch, yaw);
 
-        double tilt = roll + CV_PI / 2.0;
-        double pan  = -CV_PI / 2.0 - yaw;
+        double tilt = roll + CV_PI / 2;  // 0° gradi quando punta dritto e negativo verso il basso
+        double pan = -CV_PI / 2 - yaw;
+        // Conversione delle cordinate immagine in coordinate camera
+        double pos_orizzontale = punto_immagine.pt.x - dimensione_immagine.width / 2.0;
+        double pos_verticale = punto_immagine.pt.y - dimensione_immagine.height / 2.0;
 
-        double pos_orizzontale = punto_immagine.pt.x - dimensione_immagine.width  / 2.0;
-        double pos_verticale   = punto_immagine.pt.y - dimensione_immagine.height / 2.0;
+        double theta_orizzontale = atan2(pos_orizzontale, focal_length);  // Angolo orizzontale [radianti]
+        double theta_verticale = atan2(pos_verticale, focal_length);      // Angolo verticale [radianti]
 
-        double theta_orizzontale = std::atan2(pos_orizzontale, focal_length);
-        double theta_verticale   = std::atan2(pos_verticale,   focal_length);
+        tilt = tilt - theta_verticale;
+        pan = pan + theta_orizzontale;
 
-        tilt -= theta_verticale;
-        pan  += theta_orizzontale;
-
+        // direzione raggio
         double dx = std::cos(tilt) * std::cos(pan);
         double dy = std::cos(tilt) * std::sin(pan);
         double dz = std::sin(tilt);
 
         double t = -base2camera.tra[2] / dz;
-
         SceneTransform base2punto;
         base2punto.tra[0] = base2camera.tra[0] + t * dx;
         base2punto.tra[1] = base2camera.tra[1] + t * dy;
         base2punto.tra[2] = 0;
 
-        std::cout << "tilt: "  << tilt  << std::endl;
+        std::cout << "tilt: " << tilt << std::endl;
         std::cout << "pitch: " << pitch << std::endl;
-        std::cout << "yaw: "   << yaw   << std::endl;
+        std::cout << "yaw: " << yaw << std::endl;
 
-        std::cout << "roll: "            << roll             << std::endl;
-        std::cout << "theta_verticale: " << theta_verticale  << std::endl;
+        std::cout << "roll: " << roll << std::endl;
+        std::cout << "theta_verticale: " << theta_verticale << std::endl;
         std::cout << "theta_orizzontale: " << theta_orizzontale << std::endl;
 
         return base2punto;
@@ -773,10 +741,9 @@ private:
     SceneTransform stimaTotale(cv::Size dimensione_immagine, cv::KeyPoint punto_immagine, SceneTransform base2camera) {
         SceneTransform intPiano = intersezionePiano(dimensione_immagine, punto_immagine, base2camera);
         SceneTransform distGeom = calcola_distanza_geometrica(dimensione_immagine, punto_immagine, base2camera);
-
         SceneTransform totale;
-        totale.tra[0] = distGeom.tra[0];  // x dalla distGeom
-        totale.tra[1] = intPiano.tra[1];  // y dall'intersezionePiano
+        totale.tra[0] = distGeom.tra[0];  // prendo la x della prima
+        totale.tra[1] = intPiano.tra[1];  // prendo la y della seconda
         totale.tra[2] = 0;
 
         return totale;
@@ -793,37 +760,27 @@ private:
      * @param cerchi  Vettore che contiene, per ogni blob/cerchio, le informazioni associate.
      */
     void determina_parametri(std::vector<InfoPoint>& cerchi) {
-        for (int i = 0; i < static_cast<int>(cerchi.size()); ++i) {
+        for (int i = 0; i < cerchi.size(); i++) {
             std::cout << "FOR 1: " << i << std::endl;
             std::cout << "Cerchi size: " << cerchi.size() << std::endl;
-
             if (cerchi.at(i).dim == 0) {
                 float minDist;
-                int   minId;
-                int   j;
-
+                int minId;
+                int j;
                 std::cout << "Prima di FOR 2: " << std::endl;
-
-                for (j = 0; j < static_cast<int>(cerchi.size()); ++j) {
+                for (j = 0; j < cerchi.size(); j++) {
                     std::cout << "FOR 2: " << j << std::endl;
-
-                    float distTraBlob = std::sqrt(
-                        std::pow(cerchi.at(i).pos.x - cerchi.at(j).pos.x, 2) +
-                        std::pow(cerchi.at(i).pos.y - cerchi.at(j).pos.y, 2)
-                    );
+                    float distTraBlob = sqrt(pow(cerchi.at(i).pos.x - cerchi.at(j).pos.x, 2) + pow(cerchi.at(i).pos.y - cerchi.at(j).pos.y, 2));
 
                     if ((minDist == 0 || minDist > distTraBlob) && i != j) {
-                        minId  = j;
+                        minId = j;
                         minDist = distTraBlob;
                     }
                 }
-
-                if (j == static_cast<int>(cerchi.size())) {
-                    j = static_cast<int>(cerchi.size()) - 1;
+                if (j == cerchi.size()) {
+                    j = cerchi.size() - 1;
                 }
-
                 std::cout << "Dopo FOR 2: " << std::endl;
-
                 if (minDist > maxDist) {
                     cerchi.at(i).dim = GRANDE;
                 } else if (cerchi.at(i).dimPix > cerchi.at(j).dimPix) {
@@ -834,10 +791,8 @@ private:
                     cerchi.at(i).dim = PICCOLO;
                 }
             }
-
             std::cout << "FUORI FOR 2: " << std::endl;
         }
-
         std::cout << "FUORI FOR 1: " << std::endl;
     }
 };
