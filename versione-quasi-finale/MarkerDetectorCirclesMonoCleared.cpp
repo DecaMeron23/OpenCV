@@ -72,6 +72,7 @@ namespace perception {
 // Struct e costanti globali
 // ======================================================================
 
+// DA SPOSTARE I VALORI??
 struct InfoPoint {
     int id;             // Identificare del cerchio
     cv::Point2f pos;    // Posizione del cerchio in m
@@ -104,6 +105,7 @@ public:
      * per tutte le stime geometriche dei marker nell’immagine.
      */
     void setup() {
+        // ################### DA SPOSTARE I VALORI?? #######################
         float Df = 68.5f;             // Fov Diagonale [°]
         int Ha = 16, Va = 9;          // aspect ratio orizzontale e verticale
         int width = 1280;            
@@ -150,7 +152,7 @@ public:
         // ----------------------------------------------------------------
         // Preparazione messaggio marker
         // ----------------------------------------------------------------
-        double qx, qy, qz, qw;  // (non utilizzati che facciamo?)
+        double qx, qy, qz, qw;  // (non utilizzati che facciamo? PENSO CHE SIANO QUATERNIONI... NON SERVONO)
 
         aurora_msgs::msg::dds_::Object3DArray_ markers_msg;
 
@@ -319,12 +321,12 @@ public:
     VProperty<std::string> robot_frame_id;
 
    private:
-   // SONO DA TENERE? UNICO USATO FOCAL_LENGTH MA NON SO SE E' QUESTO CHE VIENE USATO?
+   // SONO DA TENERE? UNICO USATO FOCAL_LENGTH MA NON SO SE E' QUESTO CHE VIENE USATO? SI È QUELLO USATO
     // Lunghezza focale in pixel
     float focal_length;
-    // Altezza della camera con angolo tilt = 0°
+    // Altezza della camera con angolo tilt = 0°                    ###################DA ELIMINARE#######################
     float altezza_camera_piana;
-    // Lunghezza del braccio della camera per tilt, con tilt = 0°
+    // Lunghezza del braccio della camera per tilt, con tilt = 0°   ###################DA ELIMINARE#######################
     float braccio_tilt;
 
     // Parametri blob / filtri. Da tenere perché presi per riferimento dalla TrackBar? Resto usa SimpleBlobDetector params.
@@ -517,6 +519,8 @@ public:
         return imgHSV;
     }
 
+
+    // ###################DA ELIMINARE ?? NON SERVE??#######################
     /**
      * Calcola la posizione (relativa alla base del robot) del punto centrale dell'immagine
      * utilizzando le geometrie dei triangoli rettangoli.
@@ -575,6 +579,7 @@ public:
 
         double tilt = roll + CV_PI / 2;  // 0° gradi quando punta dritto e negativo verso il basso
         double pan = -CV_PI / 2 - yaw;
+        
         // Conversione delle cordinate immagine in coordinate camera
         double pos_orizzontale = punto_immagine.pt.x - dimensione_immagine.width / 2.0;
         double pos_verticale = punto_immagine.pt.y - dimensione_immagine.height / 2.0;
